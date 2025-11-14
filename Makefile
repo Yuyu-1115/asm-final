@@ -30,6 +30,7 @@ $(BUILD_DIR)/%.obj: $(SRC_DIR)/%.asm
 $(BUILD_DIR):
 	@if not exist $@ mkdir $@
 
-debug:
-	@echo SOURCES: $(SOURCES)
-	@echo INCLUDES: $(OBJECTS)
+.PHONY: run
+run: all
+	@echo [RUN] $(TARGET_GET)
+	./$(TARGET_NAME)
