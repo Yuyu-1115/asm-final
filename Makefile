@@ -1,5 +1,5 @@
-ML := ./ML.exe
-LINK := ./link.exe
+ML := ml
+LINK := link
 
 TARGET_NAME = out.exe
 SRC_DIR = src
@@ -34,3 +34,16 @@ $(BUILD_DIR):
 run: all
 	@echo [RUN] $(TARGET_GET)
 	./$(TARGET_NAME)
+
+.PHONY: compile_commands
+compile_commands:
+	@echo [GEN] compile_commands.json
+	@echo [ > compile_commands.json
+	@$(foreach src,$(SOURCES), \
+		echo { \
+			"directory": "$(ABS_PATH)", \
+			"command": "$(ML) $(MLFLAGS) /Fo$(patsubst $(SRC_DIR)/%.asm,$(BUILD_DIR)/%.obj,$(src)) $(src)", \
+			"file": "$(src)" \
+		}, >> compile_commands.json; \
+	)
+	@echo ] >> compile_commands.json
