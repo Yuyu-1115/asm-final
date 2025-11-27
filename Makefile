@@ -9,7 +9,7 @@ BUILD_DIR = build
 
 MLFLAGS = /c /Zd /Zi /coff /I${INC_DIR} /I.
 LDFLAGS = /subsystem:console
-LIBS = Irvine32.lib Kernel32.lib User32.lib
+LIBS = Irvine32.lib Kernel32.lib User32.lib ws2_32.lib
 
 
 
@@ -33,18 +33,5 @@ $(BUILD_DIR):
 .PHONY: run
 run: all
 	@echo [RUN] $(TARGET_GET)
-	chcp 65001
 	./$(TARGET_NAME)
 
-.PHONY: compile_commands
-compile_commands:
-	@echo [GEN] compile_commands.json
-	@echo [ > compile_commands.json
-	@$(foreach src,$(SOURCES), \
-		echo { \
-			"directory": "$(ABS_PATH)", \
-			"command": "$(ML) $(MLFLAGS) /Fo$(patsubst $(SRC_DIR)/%.asm,$(BUILD_DIR)/%.obj,$(src)) $(src)", \
-			"file": "$(src)" \
-		}, >> compile_commands.json; \
-	)
-	@echo ] >> compile_commands.json

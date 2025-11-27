@@ -1,5 +1,7 @@
+IFNDEF WINWRAPPER_INC_    
+WINWRAPPER_INC_ EQU 1
 ; ======================================================
-; Virtual Key Code Constants for Windows API
+; Virtual Key Code Constants for Windows API (that are not in SmallWin.inc)
 ; ======================================================
 
 
@@ -58,8 +60,6 @@ GENERIC_READ  = 80000000h
 GENERIC_WRITE = 40000000h
 
 
-GENERIC_RW = 0C0000000h
-FILE_SHARE_RW = 3h
 CONSOLE_TEXTMODE_BUFFER = 1h; used by the dwFlags in CreateConsoleScreenBuffer
 
 
@@ -79,7 +79,6 @@ WCHAR TEXTEQU <WORD>
 
 ; ----- Read Input -----
 
-;
 GetAsyncKeyState PROTO stdcall,
 vKey: DWORD
 
@@ -117,7 +116,7 @@ lpScreenBufferData: LPVOID    ; LPVOID in C, passing NULL is fine
 
 SetConsoleActiveScreenBuffer PROTO stdcall,
 hConsoleOutput: DWORD
-;：ㄆ
+;
 ; NOTE: 
 ; Sets the specified screen buffer to be the currently displayed console screen buffer.
 ;
@@ -146,3 +145,5 @@ lpReserved: DWORD; pass NULL
 ;
 ; NOTE:
 ; RETURN: NONZERO value if the function succeeds
+;
+ENDIF
