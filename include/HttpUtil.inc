@@ -1,0 +1,9 @@
+ifndef HTTPUTIL_INC_
+HTTPUTIL_INC_ EQU 1
+	EXTERNDEF htmlResp:BYTE
+	EXTERNDEF ppmHeader:BYTE
+	EXTERNDEF lengthFmt:BYTE
+	EXTERNDEF respBuffer:BYTE
+
+
+endif
