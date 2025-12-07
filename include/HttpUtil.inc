@@ -4,6 +4,4 @@ HTTPUTIL_INC_ EQU 1
 	EXTERNDEF ppmHeader:BYTE
 	EXTERNDEF lengthFmt:BYTE
 	EXTERNDEF respBuffer:BYTE
-
-
 endif

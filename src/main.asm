@@ -3,36 +3,46 @@ INCLUDE Irvine32.inc
 INCLUDE WinWrapper.inc  
 INCLUDE WinSocks.inc  
 INCLUDE HttpUtil.inc
+INCLUDE Redis.inc
 
 .data
+  REDIS_IP EQU 61EC4A64h;
+
   serviceData WSADATA <>
   hSocket SOCKET_HANDLE ?
   hClient SOCKET_HANDLE ?
+  hRedis SOCKET_HANDLE ?
+
   service SOCKADDR_IN <>
+  redisAddress SOCKADDR_IN <>
   clientAddress SOCKADDR_IN <>
+
   clientLength DWORD SIZEOF service
-  buffer BYTE 2048 DUP(?)
+
+  buffer BYTE 65536 DUP(?)
   respBuffer BYTE 64 DUP(?)
-  acceptMsg BYTE "Connection accepted...", 0
-  ppmBody   BYTE "P3", 13, 10
-            BYTE "3 2", 13, 10
-            BYTE "255", 13, 10
-            BYTE "255 0 0", 13, 10
-            BYTE "0 255 0", 13, 10
-            BYTE "0 0 255", 13, 10
-            BYTE "255 255 0", 13, 10
-            BYTE "255 255 255", 13, 10
-            BYTE "0 0 0", 13, 10
-            BYTE 0
+
+  acceptMsg BYTE "Connection accepted...", 0Dh, 0Ah, 0
+  redisInitMsg BYTE "[INFO] Successfully establish connection to Redis...", 0Dh, 0Ah, 0
+  testMsg BYTE "[INFO] test...", 0Dh, 0Ah, 0
 .code
 main PROC
   ; initializa windows sockets with version 2.2
   invoke WSAStartup, 0202h, ADDR serviceData
-  ; initiate sockaddr_in
+
+  ; initiate the server's in address
   mov service.sin_family, AF_INET; ipv4
   mov service.sin_addr, 0; 0.0.0.0
   invoke htons, 8080;
   mov service.sin_port, ax;
+
+  ; initiate the redis server's address
+  mov redisAddress.sin_family, AF_INET; ipv4
+  mov redisAddress.sin_addr, REDIS_IP
+  invoke htons, 6379;
+  mov redisAddress.sin_port, ax;
+
+
   jnz exitProgram
   ; create TCP socket in IPv4
   invoke socket, AF_INET, SOCK_STREAM, 0
@@ -43,6 +53,17 @@ main PROC
   ; start listening
   invoke listen, hSocket, SOMAXCONN
   jnz ExitProgram
+
+  ; establish connection to redis
+  invoke RedisConnect, ADDR redisAddress
+  .IF eax == -1
+    jmp exitProgram
+  .ENDIF
+  mov hRedis, eax
+
+  mov edx, OFFSET redisInitMsg
+  call WriteString
+
 ServerLoop:
   ; establish connection
   invoke accept, hSocket, ADDR clientAddress, ADDR clientLength
@@ -50,20 +71,21 @@ ServerLoop:
 
   mov edx, OFFSET acceptMsg
   call WriteString
-  call Crlf
 
+  ; receiving HTTP request
   invoke recv, hClient, ADDR buffer, LENGTH buffer, 0
 
-  ; sending response
 
-  mov edx, OFFSET ppmHeader
-  call WriteString
+CREATE: 
+; POST, 
 
-  mov edx, OFFSET respBuffer
-  call WriteString
+UPLOAD:
+; POST, 
 
-  mov edx, OFFSET ppmBody
-  call WriteString
+READ:
+; GET, id: int
+
+
 
 
   ; wsprintf return ohow many bytes are written
@@ -72,12 +94,15 @@ ServerLoop:
   mov ebx, eax
   invoke Str_length, OFFSET ppmHeader
   invoke send, hClient, OFFSET ppmHeader, eax, 0
-  invoke wsprintf, OFFSET respBuffer, OFFSET lengthFmt, ebx
-  invoke send, hClient, OFFSET respBuffer, eax, 0
+  invoke wsprintf, OFFSET buffer, OFFSET lengthFmt, ebx
+  invoke send, hClient, OFFSET buffer, eax, 0
   invoke send, hClient, OFFSET ppmBody, ebx, 0
 
   invoke closesocket, hClient
   jmp ServerLoop
+
+DOWNLOAD:
+
 exitProgram:
   exit
 main ENDP
