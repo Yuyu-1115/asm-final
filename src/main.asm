@@ -20,7 +20,7 @@ INCLUDE RouteUtil.inc
 
   clientLength DWORD SIZEOF service
 
-  buffer BYTE 65536 DUP(?)
+  buffer BYTE 131072 DUP(?)
   respBuffer BYTE 4096 DUP(?)
   bodyBuffer BYTE 4096 DUP(?)
   dataLen DWORD ?
@@ -28,6 +28,9 @@ INCLUDE RouteUtil.inc
   acceptMsg BYTE "Connection accepted...", 0
   redisInitMsg BYTE "[INFO] Successfully establish connection to Redis...", 0Dh, 0Ah, 0
   testMsg BYTE "[INFO] test...", 0Dh, 0Ah, 0
+  
+  strContentLength BYTE "Content-Length: ", 0
+
 .code
 main PROC
   ; initializa windows sockets with version 2.2
@@ -86,6 +89,58 @@ ServerLoop:
   add esi, eax
   mov BYTE PTR [esi], 0
 
+  ; --- FIX: Check Content-Length and Loop Recv ---
+  invoke FindString, ADDR buffer, ADDR strContentLength
+  cmp eax, -1
+  je ProcessRequest
+
+  ; Found Content-Length, parse it
+  add eax, 16 ; Skip "Content-Length: "
+  mov edx, eax
+  call ParseDecimal32
+  mov ebx, eax ; ebx = content length
+
+  ; Find Header End (\r\n\r\n) to calc header size
+  invoke FindString, ADDR buffer, ADDR split
+  cmp eax, -1
+  je ProcessRequest
+  
+  ; Header size = (split ptr - buffer start) + 4
+  sub eax, OFFSET buffer
+  add eax, 4 
+  
+  ; Total Expected = HeaderSize + ContentLength
+  add eax, ebx
+  mov ecx, eax ; ecx = expected total bytes
+
+RecvLoop:
+  cmp dataLen, ecx
+  jge ProcessRequest
+  
+  ; Recv more
+  mov edx, OFFSET buffer
+  add edx, dataLen
+  
+  mov eax, SIZEOF buffer
+  sub eax, dataLen
+  push ecx ; save expected count
+  invoke recv, hClient, edx, eax, 0
+  pop ecx
+  
+  cmp eax, 0
+  jle ProcessRequest
+  
+  add dataLen, eax
+  
+  ; Null terminate again
+  mov esi, OFFSET buffer
+  add esi, dataLen
+  mov BYTE PTR [esi], 0
+  
+  jmp RecvLoop
+  ; -----------------------------------------------
+
+ProcessRequest:
   ; /create
   invoke FindString, ADDR buffer, ADDR routeCreate
   .IF eax != -1

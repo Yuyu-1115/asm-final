@@ -112,6 +112,9 @@ artID: DWORD
 
 	LOCAL setLen: DWORD
 	LOCAL totalBytes: DWORD
+    LOCAL expectedBytes: DWORD
+    LOCAL payloadLen: DWORD
+    LOCAL headerLen: DWORD
 
 	invoke wsprintf, ADDR keyBuffer, ADDR keyFmt, artID
 	mov setLen, eax
@@ -128,6 +131,57 @@ artID: DWORD
 	; receive the data
 	invoke recv, hRedis, ADDR respBuffer, SIZEOF respBuffer, 0
 	mov totalBytes, eax
+	
+    ; --- FIX: Loop to ensure full data is received ---
+    ; 1. Parse payload length from "$<len>\r\n"
+    mov esi, OFFSET respBuffer
+    cmp BYTE PTR [esi], '$'
+    jne ParseEnd ; Not a bulk string or error
+
+    mov edx, esi
+    inc edx ; skip $
+    call ParseDecimal32
+    mov payloadLen, eax
+
+    ; 2. Find end of first line to determine header size
+    mov edi, OFFSET respBuffer
+    mov ecx, totalBytes
+    mov al, 0Ah ; \n
+    repne scasb
+    ; edi now points to byte after \n
+    
+    mov ebx, edi
+    sub ebx, OFFSET respBuffer
+    mov headerLen, ebx
+
+    ; 3. Calculate expected bytes: Header + Payload + 2 (CRLF)
+    mov ecx, headerLen
+    add ecx, payloadLen
+    add ecx, 2
+    mov expectedBytes, ecx
+
+RecvLoop:
+    mov eax, totalBytes
+    cmp eax, expectedBytes
+    jge ParseEnd
+
+    ; pointer to buffer end
+    mov edx, OFFSET respBuffer
+    add edx, totalBytes
+    
+    ; remaining size
+    mov ecx, SIZEOF respBuffer
+    sub ecx, totalBytes
+
+    invoke recv, hRedis, edx, ecx, 0
+    cmp eax, 0
+    jle ParseEnd
+    
+    add totalBytes, eax
+    jmp RecvLoop
+    ; -----------------------------------------------
+
+ParseEnd:
 	; parse till the first \n
 
 	mov esi, OFFSET respBuffer 
@@ -146,11 +200,15 @@ parse:
 	; artSize = totalBytes - headerSize = totalBytes - edx
 	mov eax, totalBytes
 	sub eax, edx
+
+	sub eax, 2
+
 	mov ecx, eax
 
 
 	mov edi, buffer
 	rep movsb
+
 
 	ret
 
@@ -186,6 +244,8 @@ artID: DWORD
 	invoke send, hRedis, ADDR NEXT_LINE, 2, 0
 
 	invoke recv, hRedis, ADDR respBuffer, SIZEOF respBuffer, 0
+
+
 
 	ret
 UpdateArt ENDP
