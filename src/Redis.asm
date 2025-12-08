@@ -71,6 +71,7 @@ dataLen: DWORD
 	invoke send, hRedis, ADDR incrCmd, eax, 0
 	invoke recv, hRedis, ADDR respBuffer, SIZEOF respBuffer, 0
 	; skip +
+	mov edx, OFFSET respBuffer
 	inc edx
 	call ParseDecimal32
 	mov artID, eax
@@ -80,7 +81,7 @@ dataLen: DWORD
 	mov setLen, eax
 
 	; properly format header with full length
-	invoke wsprintf, ADDR cmdBuffer, ADDR getHeader, setLen
+	invoke wsprintf, ADDR cmdBuffer, ADDR setHeader, setLen
 	; get length for RESP
 	invoke Str_length, ADDR cmdBuffer
 	; send header
