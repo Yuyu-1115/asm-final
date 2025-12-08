@@ -26,3 +26,7 @@ $RECYCLE.BIN/
 # build
 build/*
 out.exe
+
+# frontend
+.vscode
+node_modules
