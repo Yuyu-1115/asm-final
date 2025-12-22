@@ -9,24 +9,14 @@ Please read the following to properly setup the project.
 **Also do notice that, despite the target is Win32(x86),
 the project is mainly developed and tested on MacOS (M3/Apple Silicon)
 with VMware Fusion running Windows on ARM.**
-The emulation layer should get the job done, but please expect bug when running on native x64 platform.
-
-[ToC]
+The emulation and compatibility layer should get the job done, but please expect bug when running on native x64 platform.
 
 ## Requirements
 
-The MASM32 environment is already built-in within the repo, so you don't need to install the MASM32 SDK separately.
-The project currently only depends on the socket API of Windows (which comes from Win32 library.)
-In order to properly build and run, the following tools are required:
+To run the project, please run the following commands:
 
-### Build Tool
-
-- make: the main build tool for the project.
-
-### Database
-
-The data is stored in Redis, with which the server is will interact using **RESP(Redis Serialization Protocol)**.
-
-## Build & Run
-
-To build the project, a simple `make` should do the job, you can configure the output file via `Makefile`.
+```sh
+git clone https://github.com/Yuyu-1115/asm-prite.git
+cd asm-prite
+docker-compose up -d
+```
