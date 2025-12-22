@@ -27,7 +27,6 @@ INCLUDE RouteUtil.inc
 
   acceptMsg BYTE "Connection accepted...", 0
   redisInitMsg BYTE "[INFO] Successfully establish connection to Redis...", 0Dh, 0Ah, 0
-  testMsg BYTE "[INFO] test...", 0Dh, 0Ah, 0
   
   strContentLength BYTE "Content-Length: ", 0
 
@@ -89,13 +88,12 @@ ServerLoop:
   add esi, eax
   mov BYTE PTR [esi], 0
 
-  ; --- FIX: Check Content-Length and Loop Recv ---
   invoke FindString, ADDR buffer, ADDR strContentLength
   cmp eax, -1
   je ProcessRequest
 
   ; Found Content-Length, parse it
-  add eax, 16 ; Skip "Content-Length: "
+  add eax, (LENGTHOF strContentLength) - 1 ; Skip "Content-Length: "
   mov edx, eax
   call ParseDecimal32
   mov ebx, eax ; ebx = content length
@@ -138,7 +136,6 @@ RecvLoop:
   mov BYTE PTR [esi], 0
   
   jmp RecvLoop
-  ; -----------------------------------------------
 
 ProcessRequest:
   ; /create
@@ -177,6 +174,7 @@ ProcessRequest:
       jmp DOWNLOAD
   .ENDIF
 
+  ; Vue will send an request to test out
   invoke FindString, ADDR buffer, ADDR methodOptions
   .IF eax != -1
       mov edx, OFFSET methodOptions
