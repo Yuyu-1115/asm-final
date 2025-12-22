@@ -9,7 +9,8 @@ RUN apt-get update && apt-get install -y \
 
 COPY . .
 
-RUN rm -rf build out.exe && make ML="wine ML.EXE" LINK="wine link.exe"
+COPY ML.EXE .
+COPY link.exe .
 
 EXPOSE 8080
 

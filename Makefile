@@ -1,5 +1,5 @@
-ML := ml
-LINK := link
+ML := wine ./ML.EXE
+LINK := wine ./link.exe
 
 TARGET_NAME = out.exe
 SRC_DIR = src
